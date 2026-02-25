@@ -1,13 +1,15 @@
 // Updated to use the correct exported function name 'fetchTarotInterpretation'
-import { fetchTarotInterpretation } from '../../../lib/gemini';
+import { generateAIResponse } from '../../../lib/ai';
 import { MAJOR_ARCANA } from '../../../constants';
 
 export async function GET() {
   try {
     const randomIndex = Math.floor(Math.random() * MAJOR_ARCANA.length);
     const cardName = MAJOR_ARCANA[randomIndex];
-    // Call fetchTarotInterpretation instead of the non-existent fetchServerTarotInterpretation
-    const meaning = await fetchTarotInterpretation(cardName);
+    
+    const meaning = await generateAIResponse(`แปลความหมายไพ่ทาโรต์ "${cardName}" เป็นภาษาไทยในสไตล์พรีเมียม`, {
+      systemInstruction: "คุณคือที่ปรึกษาด้านจิตวิญญาณมืออาชีพ"
+    });
     
     return new Response(JSON.stringify({ 
       success: true, 
