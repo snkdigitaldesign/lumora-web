@@ -1,5 +1,6 @@
 // Updated to use the correct exported function name 'fetchReflectionInsight'
-import { fetchReflectionInsight } from '../../../lib/gemini';
+import { generateAIResponse, parseAIJSON } from '../../../lib/ai';
+import { InsightResult } from '../../../types';
 
 export async function POST(request: Request) {
   try {
@@ -16,8 +17,21 @@ export async function POST(request: Request) {
       });
     }
 
-    // Call fetchReflectionInsight instead of the non-existent fetchServerReflectionInsight
-    const data = await fetchReflectionInsight(thought);
+    const prompt = `วิเคราะห์และสะท้อนความคิดนี้: "${thought}" (ภาษาไทย)`;
+    const responseText = await generateAIResponse(prompt, {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: "OBJECT",
+        properties: {
+          thought: { type: "STRING" },
+          insight: { type: "STRING" },
+          guidance: { type: "STRING" },
+        },
+        required: ["thought", "insight", "guidance"]
+      },
+    });
+
+    const data = parseAIJSON<InsightResult>(responseText);
     
     return new Response(JSON.stringify({ 
       success: true, 
