@@ -1,5 +1,6 @@
 // Updated to use the correct exported function name 'fetchHoroscope'
-import { fetchHoroscope } from '../../../lib/gemini';
+import { generateAIResponse, parseAIJSON } from '../../../lib/ai';
+import { HoroscopeResult } from '../../../types';
 
 export async function POST(request: Request) {
   try {
@@ -16,8 +17,26 @@ export async function POST(request: Request) {
       });
     }
 
-    // Call fetchHoroscope with both required arguments: birthDate and period
-    const data = await fetchHoroscope(birthDate, period as 'daily' | 'monthly' | 'yearly');
+    const prompt = `พยากรณ์ดวงชะตาแบบ ${period} สำหรับผู้ที่เกิดวันที่ ${birthDate} 
+    เน้นคำทำนายเชิงภาษาที่พรีเมียม 
+    กรุณาระบุราศีแบบตะวันตก (westernZodiac) และปีนักษัตรไทย (chineseZodiac)`;
+
+    const responseText = await generateAIResponse(prompt, {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: "OBJECT",
+        properties: {
+          westernZodiac: { type: "STRING" },
+          chineseZodiac: { type: "STRING" },
+          prediction: { type: "STRING" },
+          luckyColor: { type: "STRING" },
+          luckyNumber: { type: "STRING" },
+        },
+        required: ["westernZodiac", "chineseZodiac", "prediction", "luckyColor", "luckyNumber"]
+      },
+    });
+
+    const data = parseAIJSON<HoroscopeResult>(responseText);
 
     return new Response(JSON.stringify({ 
       success: true, 
