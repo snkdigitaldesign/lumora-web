@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { fetchNumerologyAnalysis } from '../lib/gemini';
+import { generateAIResponse, parseAIJSON } from '../lib/ai';
 import { NumerologyResult } from '../types';
 
 const Numerology: React.FC = () => {
@@ -16,7 +16,21 @@ const Numerology: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchNumerologyAnalysis(input);
+      const prompt = `วิเคราะห์เลขศาสตร์หรือชื่อ: "${input}" ตามหลักทักษาหรือเลขศาสตร์สากล (ภาษาไทย) บอกพลังงานและคำแนะนำ`;
+      const responseText = await generateAIResponse(prompt, {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "OBJECT",
+          properties: {
+            analysis: { type: "STRING" },
+            energyLevel: { type: "NUMBER" },
+            recommendation: { type: "STRING" },
+          },
+          required: ["analysis", "energyLevel", "recommendation"]
+        },
+      });
+
+      const data = parseAIJSON<NumerologyResult>(responseText);
       setResult(data);
     } catch (err: any) {
       setError(err.message || "ขออภัย ระบบขัดข้อง");

@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
-import { fetchHoroscope, generateZodiacArt } from '../lib/gemini';
+import { generateAIResponse, parseAIJSON } from '../lib/ai';
 import { HoroscopeResult } from '../types';
 
 type Period = 'daily' | 'monthly' | 'yearly';
@@ -32,10 +32,28 @@ const Horoscope: React.FC = () => {
     const formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
 
     try {
-      const data = await fetchHoroscope(formattedDate, period);
+      const prompt = `พยากรณ์ดวงชะตาแบบ ${period === 'daily' ? 'รายวัน' : period === 'monthly' ? 'รายเดือน' : 'รายปี'} สำหรับผู้ที่เกิดวันที่ ${formattedDate} 
+      เน้นคำทำนายเชิงภาษาที่พรีเมียม 
+      กรุณาระบุราศีแบบตะวันตก (westernZodiac) เช่น 'กุมภ์' และปีนักษัตรไทย (chineseZodiac) เช่น 'ปีชวด' 
+      กฎเหล็ก: ห้ามส่งข้อมูลเกี่ยวกับคะแนนกราฟชีวิต 12 ภาคในส่วนนี้เด็ดขาด`;
+
+      const responseText = await generateAIResponse(prompt, {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "OBJECT",
+          properties: {
+            westernZodiac: { type: "STRING" },
+            chineseZodiac: { type: "STRING" },
+            prediction: { type: "STRING" },
+            luckyColor: { type: "STRING" },
+            luckyNumber: { type: "STRING" },
+          },
+          required: ["westernZodiac", "chineseZodiac", "prediction", "luckyColor", "luckyNumber"]
+        },
+      });
+
+      const data = parseAIJSON<HoroscopeResult>(responseText);
       setResult(data);
-      const image = await generateZodiacArt(data.westernZodiac);
-      setZodiacImage(image);
     } catch (err: any) {
       setError(err.message || 'ขออภัย การเชื่อมต่อดวงดาวขัดข้อง');
     } finally {

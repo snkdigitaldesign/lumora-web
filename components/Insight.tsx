@@ -3,7 +3,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { InsightResult } from '../types';
-import { fetchReflectionInsight } from '../lib/gemini';
+import { generateAIResponse, parseAIJSON } from '../lib/ai';
 
 const Insight: React.FC = () => {
   const [thought, setThought] = useState('');
@@ -22,7 +22,21 @@ const Insight: React.FC = () => {
     setResult(null);
 
     try {
-      const data = await fetchReflectionInsight(thought);
+      const prompt = `วิเคราะห์และสะท้อนความคิดนี้: "${thought}" (ภาษาไทย)`;
+      const responseText = await generateAIResponse(prompt, {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "OBJECT",
+          properties: {
+            thought: { type: "STRING" },
+            insight: { type: "STRING" },
+            guidance: { type: "STRING" },
+          },
+          required: ["thought", "insight", "guidance"]
+        },
+      });
+
+      const data = parseAIJSON<InsightResult>(responseText);
       setResult(data);
     } catch (err: any) {
       console.error("[Insight] Component Error:", err);

@@ -3,7 +3,7 @@
 
 import React, { useState } from 'react';
 import { MAJOR_ARCANA } from '../constants';
-import { fetchTarotInterpretation, generateTarotImage } from '../lib/gemini';
+import { generateAIResponse } from '../lib/ai';
 
 const Tarot: React.FC = () => {
   const [loading, setLoading] = useState(false);
@@ -19,12 +19,11 @@ const Tarot: React.FC = () => {
       const randomIndex = Math.floor(Math.random() * MAJOR_ARCANA.length);
       const cardName = MAJOR_ARCANA[randomIndex];
       
-      const [meaning, imageUrl] = await Promise.all([
-        fetchTarotInterpretation(cardName),
-        generateTarotImage(cardName)
-      ]);
+      const meaning = await generateAIResponse(`แปลความหมายไพ่ทาโรต์ "${cardName}" เป็นภาษาไทยในสไตล์พรีเมียม`, {
+        systemInstruction: "คุณคือที่ปรึกษาด้านจิตวิญญาณมืออาชีพ"
+      });
       
-      setCard({ name: cardName, meaning, imageUrl });
+      setCard({ name: cardName, meaning });
     } catch (err: any) {
       setError(err.message || "การเชื่อมต่ออาณาจักรทาโรต์ขัดข้อง");
     } finally {

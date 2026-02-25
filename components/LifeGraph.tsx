@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
-import { fetchLifeGraph } from '../lib/gemini';
+import { generateAIResponse, parseAIJSON } from '../lib/ai';
 import { LifeGraphResult } from '../types';
 import { 
   Chart as ChartJS, 
@@ -44,7 +44,38 @@ const LifeGraph: React.FC = () => {
 
     const formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
     try {
-      const data = await fetchLifeGraph(formattedDate);
+      const prompt = `วิเคราะห์กราฟชีวิต 12 ภาค (House Matrix) สำหรับผู้ที่เกิดวันที่ ${formattedDate} 
+      คำนวณคะแนนพลังงาน (0-100) สำหรับแต่ละภาคส่วน
+      ส่งกลับเป็น JSON เท่านั้น ห้ามมีคำพยากรณ์รายวันปน`;
+
+      const responseText = await generateAIResponse(prompt, {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "OBJECT",
+          properties: {
+            "ภาควาสนา": { type: "NUMBER" },
+            "ภาคทรัพย์": { type: "NUMBER" },
+            "ภาคเพื่อน": { type: "NUMBER" },
+            "ภาคญาติ": { type: "NUMBER" },
+            "ภาคบริวาร": { type: "NUMBER" },
+            "ภาคศัตรู": { type: "NUMBER" },
+            "ภาคคู่ครอง": { type: "NUMBER" },
+            "ภาคโรคภัย": { type: "NUMBER" },
+            "ภาคความสุข": { type: "NUMBER" },
+            "ภาคการงาน": { type: "NUMBER" },
+            "ภาคเกียรติยศ": { type: "NUMBER" },
+            "ภาคการเงิน": { type: "NUMBER" },
+            "summary": { type: "STRING" }
+          },
+          required: [
+            "ภาควาสนา", "ภาคทรัพย์", "ภาคเพื่อน", "ภาคญาติ", "ภาคบริวาร", 
+            "ภาคศัตรู", "ภาคคู่ครอง", "ภาคโรคภัย", "ภาคความสุข", 
+            "ภาคการงาน", "ภาคเกียรติยศ", "ภาคการเงิน", "summary"
+          ]
+        },
+      });
+
+      const data = parseAIJSON<LifeGraphResult>(responseText);
       setResult(data);
     } catch (err: any) {
       setError(err.message || 'ขออภัย การวิเคราะห์กราฟชีวิตขัดข้อง');

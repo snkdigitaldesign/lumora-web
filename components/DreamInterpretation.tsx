@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { fetchDreamInterpretation } from '../lib/gemini';
+import { generateAIResponse, parseAIJSON } from '../lib/ai';
 import { DreamResult } from '../types';
 
 const DreamInterpretation: React.FC = () => {
@@ -16,7 +16,20 @@ const DreamInterpretation: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchDreamInterpretation(dream);
+      const prompt = `ทำนายความฝัน: "${dream}" ในสไตล์พรีเมียมและลึกซึ้ง (ภาษาไทย) พร้อมให้เลขนำโชค`;
+      const responseText = await generateAIResponse(prompt, {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "OBJECT",
+          properties: {
+            interpretation: { type: "STRING" },
+            luckyNumbers: { type: "STRING" },
+          },
+          required: ["interpretation", "luckyNumbers"]
+        },
+      });
+
+      const data = parseAIJSON<DreamResult>(responseText);
       setResult(data);
     } catch (err: any) {
       setError(err.message || "ขออภัย ระบบขัดข้อง");
